@@ -1,6 +1,13 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export default function middleware() {
+export function middleware(req: NextRequest) {
+  const token = req.cookies.get('appSession') // exemplo: checar cookie
+  const isLoggedIn = !!token
+
+  if (!isLoggedIn) {
+    return NextResponse.redirect(new URL('/api/auth/login', req.url))
+  }
+
   return NextResponse.next()
 }
 export const config = {
