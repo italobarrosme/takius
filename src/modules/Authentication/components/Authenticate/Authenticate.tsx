@@ -3,7 +3,6 @@
 import { useSession } from '@/modules/Authentication/hooks/useSession'
 import { useLogout } from '@/modules/Authentication/hooks/useLogout'
 import Image from 'next/image'
-import Link from 'next/link'
 import { useState, KeyboardEvent } from 'react'
 
 export const Authenticate = () => {
@@ -25,14 +24,7 @@ export const Authenticate = () => {
   if (isLoading) return <span>Carregando...</span>
 
   if (!user) {
-    return (
-      <Link
-        href="/api/auth/login"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        Usuário não autenticado
-      </Link>
-    )
+    return null
   }
 
   return (
@@ -44,14 +36,16 @@ export const Authenticate = () => {
         onClick={handleOpen}
         onKeyDown={handleKeyDown}
       >
-        <span>{user.name}</span>
-        <Image
-          src={user.picture!}
-          alt={user.name!}
-          className="w-8 h-8 rounded-full"
-          width={32}
-          height={32}
-        />
+        <span>{user?.name}</span>
+        {user && (
+          <Image
+            src={user.picture!}
+            alt={user.name!}
+            className="w-8 h-8 rounded-full"
+            width={32}
+            height={32}
+          />
+        )}
         {isOpen && (
           <div className="flex flex-col gap-2 absolute top-12 bg-neutral-white right-0 w-40 rounded-md p-2 shadow-lg hover:bg-neutral-dark/10">
             <button

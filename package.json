@@ -3,6 +3,9 @@
   "version": "5.0.0",
   "description": "Nezuko Boilerplate 14.2.24 - 2025-02-21",
   "private": true,
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",
@@ -10,17 +13,22 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:deploy": "vitest --run",
-    "test:snapshot": "vitest -u"
+    "test:snapshot": "vitest -u",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:reset": "prisma migrate reset",
+    "db:seed": "prisma db seed",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^3.7.0",
     "@faker-js/faker": "^9.5.0",
     "@hookform/resolvers": "^4.1.0",
+    "@prisma/client": "^6.5.0",
     "@tailwindcss/postcss": "^4.0.7",
     "@tailwindcss/vite": "^4.0.7",
     "@testing-library/jest-dom": "^6.6.3",
     "@types/jest": "^29.5.14",
-    "@types/node": "22.13.4",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "autoprefixer": "^10.4.20",
@@ -50,6 +58,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.14.0",
     "@typescript-eslint/eslint-plugin": "^8.24.1",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-istanbul": "^3.0.7",
@@ -67,7 +76,8 @@
     "postcss": "^8.5.3",
     "prettier": "^3.5.1",
     "tailwind-merge": "^3.0.1",
-    "typescript": "^5.7.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.7"
   }

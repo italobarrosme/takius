@@ -1,10 +1,3 @@
-import {
-  openai,
-  IMAGE_GENERATION_MODEL,
-  IMAGE_QUALITY,
-  IMAGE_SIZE,
-} from '../lib'
-
 export interface Sprite {
   id: string
   imageUrl: string
@@ -24,34 +17,22 @@ export interface ImageGenerationResponse {
 export const generateImage = async (
   request: ImageGenerationRequest
 ): Promise<ImageGenerationResponse> => {
-  const DEFAULT_PROMPT = `
-  Com base nas descrições dos sprites, gere uma imagem semi realista do personagem 
-  no estilo ${request.style} se atente aos detalhes das sprites.
-`
-
   try {
-    const spriteDescriptions = request.sprites
-      .map((sprite) => `Sprite ${sprite.id}: ${sprite.description}`)
-      .join('\n')
-
-    const fullPrompt = `
-      ${spriteDescriptions}
-      
-      ${DEFAULT_PROMPT}
-    `
-
-    const response = await openai.images.generate({
-      model: IMAGE_GENERATION_MODEL,
-      prompt: fullPrompt,
-      n: 1,
-      quality: IMAGE_QUALITY,
-      size: IMAGE_SIZE,
+    const response = await fetch('/api/generate-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
     })
 
-    return {
-      imageUrl: response.data[0].url || '',
-      revisedPrompt: response.data[0].revised_prompt || fullPrompt,
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Falha ao gerar imagem')
     }
+
+    const data = await response.json()
+    return data
   } catch (error) {
     console.error('Erro ao gerar imagem:', error)
     throw new Error('Falha ao gerar imagem')

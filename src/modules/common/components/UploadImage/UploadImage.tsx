@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import React, { useCallback, useState } from 'react'
 
 interface UploadImageProps {
@@ -45,10 +46,12 @@ export const UploadImage: React.FC<UploadImageProps> = ({
   return (
     <div className="flex flex-col items-center gap-4 w-full">
       {imageUrl && (
-        <img
+        <Image
           src={imageUrl}
           alt="Preview"
           className="max-w-[200px] max-h-[200px] object-contain rounded-lg border border-gray-300"
+          width={200}
+          height={200}
         />
       )}
       <button

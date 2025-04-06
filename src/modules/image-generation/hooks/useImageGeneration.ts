@@ -15,6 +15,7 @@ export const useImageGeneration = () => {
       setIsLoading(true)
       setError(null)
       const response = await generateImage(request)
+
       setResult(response)
       return response
     } catch (err) {

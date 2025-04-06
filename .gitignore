@@ -12,6 +12,12 @@
 /.next/
 /out/
 
+# prisma
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/dev.db-trace.json
+/prisma/migrations
+
 # production
 /build
 

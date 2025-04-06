@@ -4,12 +4,7 @@ import { useState } from 'react'
 import { useImageGeneration } from '../../hooks/useImageGeneration'
 import { ImageGenerationRequest } from '../../services/getImageGeneration'
 import Image from 'next/image'
-import {
-  InputTextarea,
-  Button,
-  InputText,
-  InputSelect,
-} from '@/modules/common/components'
+import { Button, InputSelect, UploadImage } from '@/modules/common/components'
 
 export const ImageGenerator = () => {
   const { generateImage, isLoading, error, result } = useImageGeneration()
@@ -39,6 +34,15 @@ export const ImageGenerator = () => {
     )
   }
 
+  const handleImageUpload = async (id: string, file: File) => {
+    try {
+      const imageUrl = URL.createObjectURL(file)
+      handleSpriteChange(id, 'imageUrl', imageUrl)
+    } catch (err) {
+      console.error('Erro ao fazer upload da imagem:', err)
+    }
+  }
+
   const handleGenerate = async () => {
     if (sprites.length === 0) return
 
@@ -51,6 +55,25 @@ export const ImageGenerator = () => {
       await generateImage(request)
     } catch (err) {
       console.error('Erro ao gerar imagem:', err)
+    }
+  }
+
+  const handleDownloadImage = async () => {
+    if (result?.imageUrl) {
+      try {
+        const response = await fetch(result.imageUrl)
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'imagem-gerada.png'
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } catch (err) {
+        console.error('Erro ao baixar imagem:', err)
+      }
     }
   }
 
@@ -80,25 +103,11 @@ export const ImageGenerator = () => {
 
         {sprites.map((sprite) => (
           <div key={sprite.id} className="p-4 border rounded space-y-4">
-            <InputText
-              label="URL da Imagem"
-              placeholder="Digite a URL da imagem..."
-              value={sprite.imageUrl}
-              onChange={(value) =>
-                handleSpriteChange(sprite.id, 'imageUrl', value)
-              }
-              required
-            />
-            <InputTextarea
-              label="Descrição"
-              placeholder="Digite a descrição do sprite..."
-              value={sprite.description}
-              onChange={(value) =>
-                handleSpriteChange(sprite.id, 'description', value)
-              }
-              rows={6}
-              maxLength={500}
-              required
+            <UploadImage
+              onImageUpload={(file) => handleImageUpload(sprite.id, file)}
+              previewUrl={sprite.imageUrl}
+              maxSize={5}
+              accept="image/*"
             />
           </div>
         ))}
@@ -110,6 +119,7 @@ export const ImageGenerator = () => {
         onClick={handleGenerate}
         loading={isLoading}
         fullWidth
+        disabled={isLoading || sprites.length === 0}
       >
         {isLoading ? 'Gerando...' : 'Gerar Imagem'}
       </Button>
@@ -118,19 +128,36 @@ export const ImageGenerator = () => {
         <div className="p-4 bg-red-100 text-red-700 rounded">{error}</div>
       )}
 
-      {result && (
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center p-8 space-y-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600">Gerando sua imagem...</p>
+          <p className="text-sm text-gray-500">
+            Isso pode levar alguns segundos
+          </p>
+        </div>
+      )}
+
+      {!isLoading && result && (
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">Imagem Gerada:</h3>
-          <Image
-            src={result.imageUrl}
-            alt="Imagem gerada"
-            width={1024}
-            height={1024}
-            className="max-w-full rounded shadow"
-          />
-          <p className="text-sm text-gray-600">
-            <strong>Prompt revisado:</strong> {result.revisedPrompt}
-          </p>
+          <div className="flex items-center gap-2 relative">
+            <Image
+              src={result.imageUrl}
+              alt="Imagem gerada"
+              width={1024}
+              height={1024}
+              className="max-w-full rounded shadow"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleDownloadImage}
+              className="whitespace-nowrap absolute top-0 right-0"
+            >
+              Baixar Imagem
+            </Button>
+          </div>
         </div>
       )}
     </div>
