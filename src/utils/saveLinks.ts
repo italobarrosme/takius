@@ -5,6 +5,19 @@ interface Link {
   url: string
   title: string
   createdAt: string
+  spriteDescription?: string
+}
+
+// Helper function to format date in Brazilian format
+const formatBrazilianDate = (date: Date): string => {
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Sao_Paulo',
+  })
 }
 
 export const saveLinks = (links: Link[]) => {
@@ -12,18 +25,26 @@ export const saveLinks = (links: Link[]) => {
     const publicPath = path.join(process.cwd(), 'public')
     const filePath = path.join(publicPath, 'links.json')
 
-    // Garante que o diretório existe
+    // Update each link title with formatted date
+    const formattedLinks = links.map((link) => ({
+      ...link,
+      title: link.title.includes('Imagem gerada')
+        ? `Imagem gerada (Replicate) - ${formatBrazilianDate(new Date(link.createdAt))}`
+        : link.title,
+    }))
+
+    // Ensure directory exists
     if (!fs.existsSync(publicPath)) {
       fs.mkdirSync(publicPath, { recursive: true })
     }
 
-    // Salva os links no arquivo
-    fs.writeFileSync(filePath, JSON.stringify(links, null, 2))
+    // Save links to file
+    fs.writeFileSync(filePath, JSON.stringify(formattedLinks, null, 2))
 
-    console.log('Links salvos com sucesso em:', filePath)
+    console.log('Links saved successfully at:', filePath)
     return true
   } catch (error) {
-    console.error('Erro ao salvar links:', error)
+    console.error('Error saving links:', error)
     return false
   }
 }
@@ -39,7 +60,7 @@ export const loadLinks = (): Link[] => {
     const fileContent = fs.readFileSync(filePath, 'utf-8')
     return JSON.parse(fileContent)
   } catch (error) {
-    console.error('Erro ao carregar links:', error)
+    console.error('Error loading links:', error)
     return []
   }
 }

@@ -6,55 +6,101 @@ import { saveLinks, loadLinks } from '@/utils/saveLinks'
 export async function POST(request: Request) {
   try {
     const body: ImageGenerationRequest = await request.json()
+    const style =
+      body.style ||
+      'Ragnarok Online character art, faithful to pixel sprite proportions and color palette, with a semi-stylized RPG fantasy style'
+    const sex = body.sex || 'male'
 
-    const DEFAULT_PROMPT = `Analyze the visual characteristics of the pixel art sprite provided. 
-    Based on its design — including outfit, colors, accessories, posture, and overall vibe 
-    — create a full-body, semi-realistic anime-style illustration in the visual style of ${body.style}. 
-    Keep the fantasy RPG aesthetics, dramatic lighting, magical atmosphere, and high detail. 
-    Preserve the essence of the original sprite’s silhouette and identity, while reimagining it with realistic textures, shadows, and dynamic lighting.`
+    if (
+      !body.sprites ||
+      body.sprites.length === 0 ||
+      !body.sprites[0].imageUrl
+    ) {
+      return NextResponse.json(
+        { error: 'Nenhum sprite com URL válida foi enviado.' },
+        { status: 400 }
+      )
+    }
 
-    const spriteDescriptions = body.sprites
-      .map((sprite) => `Sprite ${sprite.id}: ${sprite.description}`)
-      .join('\n')
+    const spriteImageUrl = body.sprites[0].imageUrl
 
-    const fullPrompt = `
-      ${spriteDescriptions}
-      
-      ${DEFAULT_PROMPT}
-    `.trim()
-
-    console.log('Gerando imagem com prompt:', fullPrompt)
-
-    const response = await openai.images.generate({
-      model: 'dall-e-3',
-      prompt: fullPrompt,
-      n: 1,
-      size: '1024x1024',
-      quality: 'standard',
-      style: 'vivid',
+    // GPT-4 Vision: Gerar descrição do sprite e inferir o arquétipo
+    const visionResponse = await openai.chat.completions.create({
+      model: 'gpt-4-turbo',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a professional RPG concept artist. You analyze pixel art sprites to infer their class archetype (like rogue, mage, warrior, etc) and visual description. Be concise and detailed, and preserve visual fidelity to the sprite.',
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Look at this pixel art sprite from a Ragnarok Online-style RPG and describe in detail the character: include outfit, pose, colors, accessories, headgear, weapons, and the likely RPG class archetype based on visual clues. Be extremely specific and avoid inventing details not shown in the sprite.',
+            },
+            { type: 'image_url', image_url: { url: spriteImageUrl } },
+          ],
+        },
+      ],
+      max_tokens: 400,
     })
 
-    if (!response.data?.[0]?.url) {
+    console.log('Resposta GPT Vision:', JSON.stringify(visionResponse, null, 2))
+
+    const spriteDescription =
+      visionResponse?.choices?.[0]?.message?.content?.trim()
+    if (!spriteDescription) {
       return NextResponse.json(
-        { error: 'URL da imagem não encontrada na resposta' },
+        { error: 'Não foi possível descrever o sprite.' },
         { status: 500 }
       )
     }
 
-    const imageUrl = response.data[0].url
-    const revisedPrompt = response.data[0].revised_prompt || fullPrompt
+    // Criar prompt final com riqueza de detalhes e palavras-chave visuais
+    const finalPrompt = `
+      Create a splash art illustration based on the following pixel sprite description.
+      The art style should follow the look and feel of Ragnarok Online: stylized proportions, faithful color palette, and clearly defined character silhouettes.
+      The character must include all key features from the sprite: outfit design, color scheme, iconic weapons, headgear (like straw hat), and any distinguishing marks.
+      The image should reflect the character class as inferred from the sprite (e.g., rogue, assassin), and the character's gender is ${sex}.
+      Avoid overly realistic interpretations or changes in costume, and prioritize sprite fidelity over general fantasy tropes.
+      The goal is to turn the sprite into a professional, fantasy splash art that still looks unmistakably like the original character.
 
-    // Carrega os links existentes
+      Sprite Description: ${spriteDescription}
+    `.trim()
+
+    console.log('Prompt gerado:', finalPrompt)
+
+    // Gerar imagem com DALL·E 3 em alta qualidade
+    const dalleResponse = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: finalPrompt,
+      n: 1,
+      size: '1024x1024',
+      quality: 'hd',
+      style: 'vivid',
+    })
+
+    console.log('Resposta DALL·E:', JSON.stringify(dalleResponse, null, 2))
+
+    const imageUrl = dalleResponse.data?.[0]?.url
+    const revisedPrompt = dalleResponse.data?.[0]?.revised_prompt || finalPrompt
+
+    if (!imageUrl) {
+      return NextResponse.json(
+        { error: 'URL da imagem não encontrada na resposta da OpenAI.' },
+        { status: 500 }
+      )
+    }
+
+    // Salvar link
     const existingLinks = loadLinks()
-
-    // Adiciona o novo link
     const newLink = {
       url: imageUrl,
       title: `Imagem gerada - ${new Date().toLocaleDateString()}`,
       createdAt: new Date().toISOString(),
     }
-
-    // Salva os links atualizados
     saveLinks([...existingLinks, newLink])
 
     return NextResponse.json({
@@ -63,13 +109,13 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     console.error('Erro ao gerar imagem:', error)
+    console.error('Detalhes:', error?.response?.data || error?.message || error)
 
-    // Verifica se é um erro de limite de faturamento
     if (error?.code === 'billing_hard_limit_reached') {
       return NextResponse.json(
         {
           error:
-            'Limite de uso da API atingido. Por favor, verifique a configuração de faturamento da sua conta OpenAI.',
+            'Limite de uso da API atingido. Verifique seu faturamento na conta OpenAI.',
         },
         { status: 402 }
       )
@@ -77,7 +123,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        error: 'Falha ao gerar imagem. Por favor, tente novamente mais tarde.',
+        error:
+          'Falha ao gerar imagem. Tente novamente mais tarde ou revise sua entrada.',
       },
       { status: 500 }
     )

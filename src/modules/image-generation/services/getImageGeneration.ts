@@ -1,12 +1,12 @@
 export interface Sprite {
   id: string
   imageUrl: string
-  description: string
 }
 
 export interface ImageGenerationRequest {
   sprites: Sprite[]
-  style?: 'solo leveling' | 'studio ghibli'
+  style?: 'attack on titan' | 'studio ghibli'
+  sex?: 'male' | 'female'
 }
 
 export interface ImageGenerationResponse {
@@ -18,7 +18,7 @@ export const generateImage = async (
   request: ImageGenerationRequest
 ): Promise<ImageGenerationResponse> => {
   try {
-    const response = await fetch('/api/generate-image', {
+    const response = await fetch('/api/generate-image-replicate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
