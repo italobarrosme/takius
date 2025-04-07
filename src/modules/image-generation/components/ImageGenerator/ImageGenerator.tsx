@@ -123,7 +123,7 @@ export const ImageGenerator = () => {
                 onImageUpload={(file) => handleImageUpload(sprite.id, file)}
                 previewUrl={sprite.url}
                 maxSize={5}
-                accept="image/*"
+                accept="image/png, image/jpeg"
               />
               {uploadError && (
                 <p className="text-sm text-red-500">
