@@ -9,18 +9,14 @@ export async function POST(request: Request) {
       'Ragnarok Online character art, faithful to pixel sprite proportions and color palette, with a semi-stylized RPG fantasy style'
     const sex = body.sex || 'male'
 
-    if (
-      !body.sprites ||
-      body.sprites.length === 0 ||
-      !body.sprites[0].imageUrl
-    ) {
+    if (!body.sprite || !body.sprite.imageUrl) {
       return NextResponse.json(
         { error: 'Nenhum sprite com URL válida foi enviado.' },
         { status: 400 }
       )
     }
 
-    const spriteImageUrl = body.sprites[0].imageUrl
+    const spriteImageUrl = body.sprite.imageUrl
 
     // GPT-4 Vision: Gerar descrição do sprite e inferir o arquétipo
     const visionResponse = await openai.chat.completions.create({
