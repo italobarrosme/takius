@@ -21,7 +21,7 @@ export const Authenticate = () => {
     }
   }
 
-  if (isLoading) return <span>Carregando...</span>
+  if (isLoading) return null
 
   if (!user) {
     return null

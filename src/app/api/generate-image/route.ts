@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { openai } from '@/modules/image-generation/lib/openai'
 import { ImageGenerationRequest } from '@/modules/image-generation/services/getImageGeneration'
+
 export async function POST(request: Request) {
   try {
     const body: ImageGenerationRequest = await request.json()

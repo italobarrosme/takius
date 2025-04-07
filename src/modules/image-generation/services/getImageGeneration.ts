@@ -1,4 +1,3 @@
-'use server'
 export interface Sprite {
   id: string
   imageUrl: string
@@ -24,9 +23,7 @@ export const generateImage = async (
       `${process.env.NEXT_PUBLIC_API_URL}/generate-image-replicate`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        credentials: 'include',
         body: JSON.stringify(request),
       }
     )
