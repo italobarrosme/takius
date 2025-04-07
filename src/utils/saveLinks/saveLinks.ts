@@ -1,4 +1,6 @@
-import fs from 'fs'
+'use server'
+
+import fs from 'fs/promises'
 import path from 'path'
 
 interface Link {
@@ -20,7 +22,7 @@ const formatBrazilianDate = (date: Date): string => {
   })
 }
 
-export const saveLinks = (links: Link[]) => {
+export const saveLinks = async (links: Link[]): Promise<boolean> => {
   try {
     const publicPath = path.join(process.cwd(), 'public')
     const filePath = path.join(publicPath, 'links.json')
@@ -34,12 +36,14 @@ export const saveLinks = (links: Link[]) => {
     }))
 
     // Ensure directory exists
-    if (!fs.existsSync(publicPath)) {
-      fs.mkdirSync(publicPath, { recursive: true })
+    try {
+      await fs.access(publicPath)
+    } catch {
+      await fs.mkdir(publicPath, { recursive: true })
     }
 
     // Save links to file
-    fs.writeFileSync(filePath, JSON.stringify(formattedLinks, null, 2))
+    await fs.writeFile(filePath, JSON.stringify(formattedLinks, null, 2))
 
     console.log('Links saved successfully at:', filePath)
     return true
@@ -49,15 +53,17 @@ export const saveLinks = (links: Link[]) => {
   }
 }
 
-export const loadLinks = (): Link[] => {
+export const loadLinks = async (): Promise<Link[]> => {
   try {
     const filePath = path.join(process.cwd(), 'public', 'links.json')
 
-    if (!fs.existsSync(filePath)) {
+    try {
+      await fs.access(filePath)
+    } catch {
       return []
     }
 
-    const fileContent = fs.readFileSync(filePath, 'utf-8')
+    const fileContent = await fs.readFile(filePath, 'utf-8')
     return JSON.parse(fileContent)
   } catch (error) {
     console.error('Error loading links:', error)

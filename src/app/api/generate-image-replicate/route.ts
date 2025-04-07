@@ -4,6 +4,7 @@ import { ImageGenerationRequest } from '@/modules/image-generation/services/getI
 import { saveLinks, loadLinks } from '@/utils/saveLinks'
 import { logProgressBar } from '@/utils/logProgressBar/logProgressBar'
 import { openai } from '@/modules/image-generation/lib'
+import { getSession } from '@auth0/nextjs-auth0'
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
@@ -11,24 +12,39 @@ const replicate = new Replicate({
 
 export async function POST(request: Request) {
   try {
+    const session = await getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+    }
+
     const body: ImageGenerationRequest = await request.json()
+
+    console.log(body, 'here ######################')
     const style =
       body.style ||
       'Ragnarok Online character art, faithful to pixel sprite proportions and color palette, with a semi-stylized RPG fantasy style'
     const sex = body.sex || 'male'
 
-    if (
-      !body.sprites ||
-      body.sprites.length === 0 ||
-      !body.sprites[0].imageUrl
-    ) {
+    if (!body.sprite || !body.sprite.imageUrl) {
       return NextResponse.json(
         { error: 'Nenhum sprite com URL válida foi enviado.' },
         { status: 400 }
       )
     }
 
-    const spriteImageUrl = body.sprites[0].imageUrl
+    const spriteImageUrl = body.sprite.imageUrl
+
+    // Verificar se a URL é válida
+    try {
+      new URL(spriteImageUrl)
+    } catch (error) {
+      console.error('URL inválida:', error)
+      return NextResponse.json(
+        { error: 'URL do sprite é inválida.' },
+        { status: 400 }
+      )
+    }
 
     // GPT-4 Vision: Gerar descrição do sprite e inferir o arquétipo
     const visionResponse = await openai.chat.completions.create({
@@ -65,15 +81,15 @@ export async function POST(request: Request) {
     }
 
     // Primeira etapa: Salvar link com a descrição do sprite
-    const existingLinks = loadLinks()
+    const existingLinks = await loadLinks()
     const newLink = {
       url: '',
       title: `Imagem gerada (Replicate)`,
       createdAt: new Date().toISOString(),
       spriteDescription,
     }
-    const updatedLinks = [...existingLinks, newLink]
-    saveLinks(updatedLinks)
+
+    await saveLinks([...existingLinks, newLink])
 
     // Usar o modelo Stable Diffusion 3.5 Medium do Replicate
     const prediction = await replicate.predictions.create({
@@ -99,19 +115,19 @@ export async function POST(request: Request) {
 
     console.log('Status inicial:', output.status)
 
-    // Iniciar a barra de progresso
-    const progressInterval = logProgressBar(0, 100)
+    // iniciar a barra de progresso
+
+    let progress = 0
 
     while (output.status === 'starting' || output.status === 'processing') {
       await new Promise((resolve) => setTimeout(resolve, 1000))
       output = await replicate.predictions.get(prediction.id)
       console.log('Status atual:', output.status)
+
+      progress += 10
+      await logProgressBar(progress)
     }
 
-    // Parar a barra de progresso
-    if (progressInterval) {
-      clearInterval(progressInterval)
-    }
     console.clear()
     console.log('Geração concluída!')
 
@@ -138,12 +154,13 @@ export async function POST(request: Request) {
     const imageUrl = output.output[0]
 
     // Segunda etapa: Atualizar o link com a URL da imagem
-    const linkIndex = updatedLinks.length - 1
-    updatedLinks[linkIndex] = {
-      ...updatedLinks[linkIndex],
+    const linkIndex = existingLinks.findIndex(
+      (link) => link.spriteDescription === spriteDescription
+    )
+    existingLinks[linkIndex] = {
+      ...existingLinks[linkIndex],
       url: imageUrl,
     }
-    saveLinks(updatedLinks)
 
     return NextResponse.json({
       imageUrl,

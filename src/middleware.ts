@@ -1,18 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getSession } from '@auth0/nextjs-auth0'
+import {
+  NextRequest,
+  NextFetchEvent,
+  NextResponse,
+  NextMiddleware,
+} from 'next/server'
+import middlewareAuth from './modules/Authentication/libs/middlewareAuth'
 
-export async function middleware(req: NextRequest) {
-  const res = new NextResponse()
-  const session = await getSession(req, res)
-  console.log('req', req)
+const MIDDLEWARES: NextMiddleware[] = [middlewareAuth]
 
-  console.log('session!!!!!!!!', session)
+export const middleware = async (req: NextRequest, event: NextFetchEvent) => {
+  const response = NextResponse.next()
 
-  if (!session) {
-    return NextResponse.redirect(new URL('/api/auth/login', req.url))
+  for await (const middlewareFunction of MIDDLEWARES) {
+    await middlewareFunction(req, event)
   }
-
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
@@ -25,5 +27,7 @@ export const config = {
      * - favicon.ico (favicon file)
      */
     '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
+    '/api/generate-image-replicate',
+    '/api/generate-image',
   ],
 }

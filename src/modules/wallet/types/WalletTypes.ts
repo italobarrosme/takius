@@ -1,8 +1,10 @@
+import { Currency } from '@prisma/client'
+
 export interface Wallet {
   id: string
   userId: string
   balance: number
-  currency: 'ORIDECON'
+  currency: Currency
   createdAt: Date
   updatedAt: Date
 }

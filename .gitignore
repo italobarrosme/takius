@@ -29,7 +29,7 @@
 # pwa
 public/sw.js
 public/workbox-*.js
-/public/links.json
+public/links.json
 
 # debug
 npm-debug.log*

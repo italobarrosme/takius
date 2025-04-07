@@ -18,7 +18,9 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "eslint:fix": "eslint --fix .",
+    "lefthook:install": "lefthook install"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^3.7.0",
@@ -73,7 +75,7 @@
     "eslint-plugin-testing-library": "^7.1.1",
     "globals": "^16.0.0",
     "jsdom": "^26.0.0",
-    "lefthook": "^1.10.10",
+    "lefthook": "^1.11.7",
     "lint-staged": "^15.4.3",
     "postcss": "^8.5.3",
     "prettier": "^3.5.1",

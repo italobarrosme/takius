@@ -13,48 +13,39 @@ export const ImageGenerator = () => {
   const { generateImage, isLoading, error, result } = useImageGeneration()
   const { upload, uploading, error: uploadError } = useCloudinaryUpload()
 
-  const [sprites, setSprites] = useState<{ id: string; url: string }[]>([])
-
+  const [sprite, setSprite] = useState<{ id: string; url: string }>()
   const [style, setStyle] = useState<'attack on titan' | 'studio ghibli'>(
     'attack on titan'
   )
-
   const [sex, setSex] = useState<'male' | 'female'>('male')
 
-  const handleAddSprite = () => {
-    const newSprite = {
-      id: Date.now().toString(),
-      url: '',
-    }
-    setSprites((prev) => [...prev, newSprite])
-  }
-
-  const handleImageUpload = async (id: string, file: File) => {
+  const handleImageUpload = async (files: File[]) => {
     try {
-      const result = await upload(file)
+      const result = await upload(files[0])
       if (!result) return
 
-      setSprites((prev) =>
-        prev.map((sprite) =>
-          sprite.id === id ? { ...sprite, url: result.secure_url } : sprite
-        )
-      )
+      setSprite({
+        id: Date.now().toString(),
+        url: result.secure_url,
+      })
     } catch (err) {
-      console.error('Erro ao fazer upload da imagem:', err)
+      console.error('Erro ao fazer upload das imagens:', err)
     }
   }
 
   const handleGenerate = async () => {
-    if (sprites.length === 0) return
+    if (!sprite) return
 
     const request: ImageGenerationRequest = {
-      sprites: sprites.map((sprite) => ({
+      sprite: {
         id: sprite.id,
         imageUrl: sprite.url,
-      })),
+      },
       style,
       sex,
     }
+
+    console.log(request, 'here')
 
     try {
       await generateImage(request)
@@ -113,25 +104,22 @@ export const ImageGenerator = () => {
               required
             />
           </div>
-          <Button variant="primary" size="md" onClick={handleAddSprite}>
-            Adicionar Sprite
-          </Button>
 
-          {sprites.map((sprite) => (
-            <div key={sprite.id} className="p-4 border rounded space-y-4">
-              <UploadImage
-                onImageUpload={(file) => handleImageUpload(sprite.id, file)}
-                previewUrl={sprite.url}
-                maxSize={5}
-                accept="image/png, image/jpeg"
-              />
-              {uploadError && (
-                <p className="text-sm text-red-500">
-                  Erro ao enviar imagem: {uploadError}
-                </p>
-              )}
-            </div>
-          ))}
+          <div className="p-4 border rounded space-y-4">
+            <UploadImage
+              onImageUpload={handleImageUpload}
+              previewUrls={sprite?.url ? [sprite.url] : []}
+              maxSize={5}
+              accept="image/png, image/jpeg"
+              maxImages={1}
+              multiple={false}
+            />
+            {uploadError && (
+              <p className="text-sm text-red-500">
+                Erro ao enviar imagem: {uploadError}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col items-center justify-center gap-4 min-w-96">
@@ -177,7 +165,7 @@ export const ImageGenerator = () => {
             onClick={handleGenerate}
             loading={isLoading || uploading}
             fullWidth
-            disabled={isLoading || uploading || sprites.length === 0}
+            disabled={isLoading || uploading || !sprite}
           >
             {isLoading || uploading ? 'Processando...' : 'Gerar Imagem'}
           </Button>

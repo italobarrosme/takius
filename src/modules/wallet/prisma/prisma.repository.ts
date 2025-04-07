@@ -33,17 +33,30 @@ export const walletPrismaService = {
     type: 'CREDIT' | 'DEBIT'
     description: string
   }): Promise<WalletTransaction> {
-    return prisma.walletTransaction.create({
-      data,
+    const transaction = await prisma.walletTransaction.create({
+      data: {
+        ...data,
+        type: data.type as 'CREDIT' | 'DEBIT',
+      },
     })
+
+    return {
+      ...transaction,
+      type: transaction.type as 'CREDIT' | 'DEBIT',
+    }
   },
 
   async findTransactionsByWalletId(
     walletId: string
   ): Promise<WalletTransaction[]> {
-    return prisma.walletTransaction.findMany({
+    const transactions = await prisma.walletTransaction.findMany({
       where: { walletId },
       orderBy: { createdAt: 'desc' },
     })
+
+    return transactions.map((transaction) => ({
+      ...transaction,
+      type: transaction.type as 'CREDIT' | 'DEBIT',
+    }))
   },
 }

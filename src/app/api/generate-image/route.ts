@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { openai } from '@/modules/image-generation/lib/openai'
 import { ImageGenerationRequest } from '@/modules/image-generation/services/getImageGeneration'
-import { saveLinks, loadLinks } from '@/utils/saveLinks'
-
 export async function POST(request: Request) {
   try {
     const body: ImageGenerationRequest = await request.json()
@@ -60,9 +58,9 @@ export async function POST(request: Request) {
 
     // Criar prompt final com riqueza de detalhes e palavras-chave visuais
     const finalPrompt = `
-      Create a splash art illustration based on the following pixel sprite description.
+      Create a splash art illustration based on the following pixel sprite description with the style ${style}.
       The art style should follow the look and feel of Ragnarok Online: stylized proportions, faithful color palette, and clearly defined character silhouettes.
-      The character must include all key features from the sprite: outfit design, color scheme, iconic weapons, headgear (like straw hat), and any distinguishing marks.
+      The character must include all key features from the sprite: outfit design, color scheme, iconic weapons, headgear, and any distinguishing marks.
       The image should reflect the character class as inferred from the sprite (e.g., rogue, assassin), and the character's gender is ${sex}.
       Avoid overly realistic interpretations or changes in costume, and prioritize sprite fidelity over general fantasy tropes.
       The goal is to turn the sprite into a professional, fantasy splash art that still looks unmistakably like the original character.
@@ -93,15 +91,6 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
-
-    // Salvar link
-    const existingLinks = loadLinks()
-    const newLink = {
-      url: imageUrl,
-      title: `Imagem gerada - ${new Date().toLocaleDateString()}`,
-      createdAt: new Date().toISOString(),
-    }
-    saveLinks([...existingLinks, newLink])
 
     return NextResponse.json({
       imageUrl,

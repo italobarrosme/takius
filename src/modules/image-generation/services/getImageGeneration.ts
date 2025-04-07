@@ -1,10 +1,11 @@
+'use server'
 export interface Sprite {
   id: string
   imageUrl: string
 }
 
 export interface ImageGenerationRequest {
-  sprites: Sprite[]
+  sprite: Sprite
   style?: 'attack on titan' | 'studio ghibli'
   sex?: 'male' | 'female'
 }
@@ -18,13 +19,17 @@ export const generateImage = async (
   request: ImageGenerationRequest
 ): Promise<ImageGenerationResponse> => {
   try {
-    const response = await fetch('/api/generate-image-replicate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    })
+    console.log(request, '################')
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/generate-image-replicate`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      }
+    )
 
     if (!response.ok) {
       const error = await response.json()
