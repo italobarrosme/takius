@@ -5,8 +5,10 @@ export interface Sprite {
 
 export interface ImageGenerationRequest {
   sprite: Sprite
-  style?: 'attack on titan' | 'studio ghibli'
+  style?: 'attack on titan' | 'studio ghibli' | 'Ragnarok Online'
   sex?: 'male' | 'female'
+  class?: string
+  description?: string
 }
 
 export interface ImageGenerationResponse {
